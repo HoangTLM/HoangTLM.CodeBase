@@ -42,6 +42,18 @@
                     "endsPattern": "Compiled successfully"
                 }
             }
+        },
+        {
+            "label": "build-dotnet-scanner",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/src/HoangTLM.CodeBase.DotNetScanner.App/HoangTLM.CodeBase.DotNetScanner.App.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
         }
     ]
 }

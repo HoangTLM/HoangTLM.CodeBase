@@ -33,6 +33,17 @@
             "url": "http://localhost:4200",
             "webRoot": "${workspaceFolder}/src/HoangTLM.CodeBase.DatabaseScanner.Web",
             "preLaunchTask": "start-web"
+        },
+        {
+            "name": "Debug .NET Scanner",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-dotnet-scanner",
+            "program": "${workspaceFolder}/src/HoangTLM.CodeBase.DotNetScanner.App/bin/Debug/net8.0/HoangTLM.CodeBase.DotNetScanner.App.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/HoangTLM.CodeBase.DotNetScanner.App",
+            "console": "internalConsole",
+            "stopAtEntry": false
         }
     ],
     "compounds": [
