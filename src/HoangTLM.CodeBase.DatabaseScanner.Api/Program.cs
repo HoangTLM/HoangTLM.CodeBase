@@ -259,7 +259,7 @@ app.MapGet("/api/routines/{projectId}", async (string projectId) =>
             SELECT e.id, e.name, e.type, e.signature, e.description, e.metadata
             FROM entities e
             INNER JOIN files f ON e.file_id = f.id
-            WHERE f.project_id = @projectId AND e.type IN ('StoredProcedure', 'Function', 'Trigger')
+            WHERE f.project_id = @projectId AND e.type IN ('StoredProcedure', 'Function', 'Trigger', 'store')
             ORDER BY e.type, e.name;";
         using (var cmd = new SqliteCommand(query, conn))
         {
@@ -282,6 +282,44 @@ app.MapGet("/api/routines/{projectId}", async (string projectId) =>
         }
     }
     return Results.Ok(routines);
+});
+
+app.MapGet("/api/context/{projectId}", async (string projectId) =>
+{
+    var entities = new List<object>();
+    using (var conn = new SqliteConnection(GetConnectionString()))
+    {
+        await conn.OpenAsync();
+        string query = @"
+            SELECT e.id, e.name, e.type, e.signature, e.start_line, e.end_line, e.metadata, e.description, f.relative_path
+            FROM entities e
+            INNER JOIN files f ON e.file_id = f.id
+            WHERE f.project_id = @projectId AND e.type IN ('class', 'interface', 'method', 'enum', 'const', 'endpoint', 'queue', 'schedule', 'controller')
+            ORDER BY e.type, e.name;";
+        using (var cmd = new SqliteCommand(query, conn))
+        {
+            cmd.Parameters.AddWithValue("@projectId", projectId);
+            using (var reader = await cmd.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    entities.Add(new
+                    {
+                        Id = reader["id"].ToString(),
+                        Name = reader["name"].ToString(),
+                        Type = reader["type"].ToString(),
+                        Signature = reader["signature"].ToString(),
+                        StartLine = Convert.ToInt32(reader["start_line"]),
+                        EndLine = Convert.ToInt32(reader["end_line"]),
+                        Description = reader["description"] != DBNull.Value ? reader["description"].ToString() : null,
+                        Metadata = reader["metadata"] != DBNull.Value ? reader["metadata"].ToString() : null,
+                        RelativePath = reader["relative_path"].ToString()
+                    });
+                }
+            }
+        }
+    }
+    return Results.Ok(entities);
 });
 
 app.Run();

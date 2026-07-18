@@ -139,6 +139,119 @@
           </div>
         </div>
 
+        <!-- BE .NET Source Context Root Node -->
+        <div class="tree-node database-node" style="margin-top: 16px;">
+          <div class="node-header">
+            <span class="icon">🧩</span>
+            <span class="name">BE (.NET Source Context)</span>
+          </div>
+          <div class="node-children">
+            
+            <!-- 1. Classes & Interfaces -->
+            <div class="tree-group">
+              <div class="group-header">
+                <span class="icon">📁</span>
+                <span class="name">Classes & Interfaces</span>
+              </div>
+              <div class="group-items">
+                <div *ngFor="let c of getContextEntitiesByType('class').concat(getContextEntitiesByType('interface'))" 
+                     class="tree-item leaf"
+                     [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === c.id"
+                     (click)="onTreeItemSelect('routine', c)">
+                  <span class="item-icon">🗃️</span>
+                  <span class="item-name" [title]="c.name">{{ c.name }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Methods / Functions -->
+            <div class="tree-group">
+              <div class="group-header">
+                <span class="icon">📁</span>
+                <span class="name">Methods</span>
+              </div>
+              <div class="group-items">
+                <div *ngFor="let c of getContextEntitiesByType('method')" 
+                     class="tree-item leaf"
+                     [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === c.id"
+                     (click)="onTreeItemSelect('routine', c)">
+                  <span class="item-icon">⚙️</span>
+                  <span class="item-name" [title]="c.name">{{ c.name }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Enums & Constants -->
+            <div class="tree-group">
+              <div class="group-header">
+                <span class="icon">📁</span>
+                <span class="name">Enums & Constants</span>
+              </div>
+              <div class="group-items">
+                <div *ngFor="let c of getContextEntitiesByType('enum').concat(getContextEntitiesByType('const'))" 
+                     class="tree-item leaf"
+                     [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === c.id"
+                     (click)="onTreeItemSelect('routine', c)">
+                  <span class="item-icon">💎</span>
+                  <span class="item-name" [title]="c.name">{{ c.name }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Endpoints (Controllers & Minimal) -->
+            <div class="tree-group">
+              <div class="group-header">
+                <span class="icon">📁</span>
+                <span class="name">API Endpoints ({{ getContextEntitiesByType('endpoint').length }})</span>
+              </div>
+              <div class="group-items">
+                <div *ngFor="let c of getContextEntitiesByType('endpoint')" 
+                     class="tree-item leaf"
+                     [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === c.id"
+                     (click)="onTreeItemSelect('routine', c)">
+                  <span class="item-icon">🌐</span>
+                  <span class="item-name" [title]="c.name">{{ c.name }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. RabbitMQ Queues -->
+            <div class="tree-group">
+              <div class="group-header">
+                <span class="icon">📁</span>
+                <span class="name">Queues (RabbitMQ)</span>
+              </div>
+              <div class="group-items">
+                <div *ngFor="let c of getContextEntitiesByType('queue')" 
+                     class="tree-item leaf"
+                     [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === c.id"
+                     (click)="onTreeItemSelect('routine', c)">
+                  <span class="item-icon">📥</span>
+                  <span class="item-name" [title]="c.name">{{ c.name }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. Background Schedules -->
+            <div class="tree-group">
+              <div class="group-header">
+                <span class="icon">📁</span>
+                <span class="name">Schedules</span>
+              </div>
+              <div class="group-items">
+                <div *ngFor="let c of getContextEntitiesByType('schedule')" 
+                     class="tree-item leaf"
+                     [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === c.id"
+                     (click)="onTreeItemSelect('routine', c)">
+                  <span class="item-icon">⏰</span>
+                  <span class="item-name" [title]="c.name">{{ c.name }}</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </aside>
 

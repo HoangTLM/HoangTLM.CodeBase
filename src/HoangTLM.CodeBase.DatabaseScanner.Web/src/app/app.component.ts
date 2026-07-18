@@ -24,6 +24,7 @@ export class AppComponent implements OnInit {
   // Full list of loaded elements
   allTables: FlowTable[] = [];
   routines: any[] = [];
+  contextEntities: any[] = [];
   
   // Displayed elements on the canvas
   displayedTables: FlowTable[] = [];
@@ -126,6 +127,14 @@ export class AppComponent implements OnInit {
       },
       error: err => console.error('Failed to load routines', err)
     });
+
+    // 3. Load C# Source Context Entities
+    this.apiService.getContextEntities(projectId).subscribe({
+      next: res => {
+        this.contextEntities = res;
+      },
+      error: err => console.error('Failed to load context entities', err)
+    });
   }
 
   getDefaultPosition(index: number): { x: number; y: number } {
@@ -139,11 +148,15 @@ export class AppComponent implements OnInit {
     return this.routines.filter(r => r.type === type);
   }
 
+  getContextEntitiesByType(type: string): any[] {
+    return this.contextEntities.filter(e => e.type === type);
+  }
+
   getRoutineCode(): string {
     if (this.selectedTreeItem?.type === 'routine' && this.selectedTreeItem.data.metadata) {
       try {
         const meta = JSON.parse(this.selectedTreeItem.data.metadata);
-        return meta.definition || this.selectedTreeItem.data.signature || '';
+        return meta.code || meta.definition || this.selectedTreeItem.data.signature || '';
       } catch (e) {
         return this.selectedTreeItem.data.signature || '';
       }

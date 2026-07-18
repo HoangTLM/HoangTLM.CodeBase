@@ -109,6 +109,38 @@ namespace HoangTLM.CodeBase.DatabaseScanner.Sqlite
                         }
                     }
 
+                    // Create FTS5 Triggers to automatically sync fts_entities virtual table
+                    string createInsertTrigger = @"
+                        CREATE TRIGGER IF NOT EXISTS trg_entities_after_insert
+                        AFTER INSERT ON entities
+                        BEGIN
+                            INSERT INTO fts_entities (id, name, type, signature, description)
+                            VALUES (NEW.id, NEW.name, NEW.type, NEW.signature, NEW.description);
+                        END;";
+
+                    string createUpdateTrigger = @"
+                        CREATE TRIGGER IF NOT EXISTS trg_entities_after_update
+                        AFTER UPDATE ON entities
+                        BEGIN
+                            UPDATE fts_entities
+                            SET name = NEW.name,
+                                type = NEW.type,
+                                signature = NEW.signature,
+                                description = NEW.description
+                            WHERE id = NEW.id;
+                        END;";
+
+                    string createDeleteTrigger = @"
+                        CREATE TRIGGER IF NOT EXISTS trg_entities_after_delete
+                        AFTER DELETE ON entities
+                        BEGIN
+                            DELETE FROM fts_entities WHERE id = OLD.id;
+                        END;";
+
+                    using (var cmd = new SqliteCommand(createInsertTrigger, connection, transaction)) await cmd.ExecuteNonQueryAsync();
+                    using (var cmd = new SqliteCommand(createUpdateTrigger, connection, transaction)) await cmd.ExecuteNonQueryAsync();
+                    using (var cmd = new SqliteCommand(createDeleteTrigger, connection, transaction)) await cmd.ExecuteNonQueryAsync();
+
                     await transaction.CommitAsync();
                 }
             }
