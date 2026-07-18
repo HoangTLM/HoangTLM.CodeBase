@@ -10,5 +10,6 @@ namespace HoangTLM.CodeBase.DatabaseScanner.Models
         public string SchemaName { get; set; }
         public string DatabaseName { get; set; }
         public string Description { get; set; }
+        public string Metadata { get; set; }
     }
 }

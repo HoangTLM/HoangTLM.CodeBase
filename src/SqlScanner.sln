@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoangTLM.CodeBase.DatabaseS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoangTLM.CodeBase.DatabaseScanner.App", "HoangTLM.CodeBase.DatabaseScanner.App\HoangTLM.CodeBase.DatabaseScanner.App.csproj", "{8E955774-0F8C-4AB5-AD95-AD643542C020}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoangTLM.CodeBase.DatabaseScanner.Api", "HoangTLM.CodeBase.DatabaseScanner.Api\HoangTLM.CodeBase.DatabaseScanner.Api.csproj", "{492881B6-A862-458B-8BEF-39020357762A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{8E955774-0F8C-4AB5-AD95-AD643542C020}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8E955774-0F8C-4AB5-AD95-AD643542C020}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8E955774-0F8C-4AB5-AD95-AD643542C020}.Release|Any CPU.Build.0 = Release|Any CPU
+		{492881B6-A862-458B-8BEF-39020357762A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{492881B6-A862-458B-8BEF-39020357762A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{492881B6-A862-458B-8BEF-39020357762A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{492881B6-A862-458B-8BEF-39020357762A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

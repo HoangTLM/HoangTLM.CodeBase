@@ -2,16 +2,46 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "build-scanner",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/src/SqlScanner.sln",
+                "${workspaceFolder}/src/HoangTLM.CodeBase.DatabaseScanner.App/HoangTLM.CodeBase.DatabaseScanner.App.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build-api",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/src/HoangTLM.CodeBase.DatabaseScanner.Api/HoangTLM.CodeBase.DatabaseScanner.Api.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "start-web",
+            "type": "shell",
+            "command": "npm start",
+            "options": {
+                "cwd": "${workspaceFolder}/src/HoangTLM.CodeBase.DatabaseScanner.Web"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "typescript",
+                "pattern": "$tsc",
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "Generating browser application bundles",
+                    "endsPattern": "Compiled successfully"
+                }
+            }
         }
     ]
 }

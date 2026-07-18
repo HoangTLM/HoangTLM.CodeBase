@@ -222,7 +222,7 @@ namespace HoangTLM.CodeBase.DatabaseScanner.Sqlite
                 }
 
                 var existingTables = new Dictionary<string, DbTable>();
-                string getTablesQuery = "SELECT id, project_id, name, schema_name, database_name, description FROM db_tables WHERE project_id = @projectId;";
+                string getTablesQuery = "SELECT id, project_id, name, schema_name, database_name, description, metadata FROM db_tables WHERE project_id = @projectId;";
                 using (var command = new SqliteCommand(getTablesQuery, connection))
                 {
                     command.Parameters.AddWithValue("@projectId", projectId);
@@ -237,7 +237,8 @@ namespace HoangTLM.CodeBase.DatabaseScanner.Sqlite
                                 Name = reader["name"].ToString(),
                                 SchemaName = reader["schema_name"].ToString(),
                                 DatabaseName = reader["database_name"].ToString(),
-                                Description = reader["description"] != DBNull.Value ? reader["description"].ToString() : null
+                                Description = reader["description"] != DBNull.Value ? reader["description"].ToString() : null,
+                                Metadata = reader["metadata"] != DBNull.Value ? reader["metadata"].ToString() : null
                             };
                             existingTables[t.Id] = t;
                         }
@@ -252,8 +253,8 @@ namespace HoangTLM.CodeBase.DatabaseScanner.Sqlite
                         if (!existingTables.ContainsKey(scannedTable.Id))
                         {
                             string insertSql = @"
-                                INSERT INTO db_tables (id, project_id, name, schema_name, database_name, description)
-                                VALUES (@id, @projectId, @name, @schemaName, @databaseName, @description);";
+                                INSERT INTO db_tables (id, project_id, name, schema_name, database_name, description, metadata)
+                                VALUES (@id, @projectId, @name, @schemaName, @databaseName, @description, @metadata);";
                             using (var command = new SqliteCommand(insertSql, connection, transaction))
                             {
                                 command.Parameters.AddWithValue("@id", scannedTable.Id);
@@ -262,6 +263,7 @@ namespace HoangTLM.CodeBase.DatabaseScanner.Sqlite
                                 command.Parameters.AddWithValue("@schemaName", scannedTable.SchemaName);
                                 command.Parameters.AddWithValue("@databaseName", scannedTable.DatabaseName);
                                 command.Parameters.AddWithValue("@description", (object)scannedTable.Description ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@metadata", (object)scannedTable.Metadata ?? DBNull.Value);
                                 await command.ExecuteNonQueryAsync();
                             }
                             Console.WriteLine($"[Table] Inserted table: {scannedTable.SchemaName}.{scannedTable.Name}");

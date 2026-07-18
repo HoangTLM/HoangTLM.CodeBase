@@ -5,12 +5,42 @@
             "name": "Debug Database Scanner",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
+            "preLaunchTask": "build-scanner",
             "program": "${workspaceFolder}/src/HoangTLM.CodeBase.DatabaseScanner.App/bin/Debug/net8.0/HoangTLM.CodeBase.DatabaseScanner.App.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/HoangTLM.CodeBase.DatabaseScanner.App",
             "console": "internalConsole",
             "stopAtEntry": false
+        },
+        {
+            "name": "Debug Web API",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-api",
+            "program": "${workspaceFolder}/src/HoangTLM.CodeBase.DatabaseScanner.Api/bin/Debug/net8.0/HoangTLM.CodeBase.DatabaseScanner.Api.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/HoangTLM.CodeBase.DatabaseScanner.Api",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+        {
+            "name": "Debug Angular Web",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:4200",
+            "webRoot": "${workspaceFolder}/src/HoangTLM.CodeBase.DatabaseScanner.Web",
+            "preLaunchTask": "start-web"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Debug API + Web",
+            "configurations": [
+                "Debug Web API",
+                "Debug Angular Web"
+            ]
         }
     ]
 }

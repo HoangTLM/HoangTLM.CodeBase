@@ -1,0 +1,164 @@
+<div class="app-container">
+  <!-- Header Bar -->
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-icon">📊</span>
+      <h1>Database ERD Catalog Viewer</h1>
+    </div>
+    
+    <div class="project-selector-container">
+      <label for="projectSelect">Active Scan Project:</label>
+      <select id="projectSelect" [value]="selectedProjectId" (change)="onProjectChange($event)">
+        <option *ngFor="let p of projects" [value]="p.id">
+          {{ p.name }} ({{ p.scannedAt | date:'medium' }})
+        </option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Workspace split -->
+  <div class="app-workspace">
+    <!-- Main flow canvas -->
+    <main class="canvas-container">
+      <f-flow fDraggable (fCreateConnection)="onCreateConnection($event)">
+        <f-canvas>
+          <!-- Helper guide when dragging a new link -->
+          <f-connection-for-create></f-connection-for-create>
+
+          <!-- Render existing relationships as lines -->
+          <f-connection
+            *ngFor="let conn of connections"
+            [fConnectionId]="conn.id"
+            [fOutputId]="conn.source"
+            [fInputId]="conn.target"
+            class="erd-connection"
+            (dblclick)="onConnectionDoubleClick(conn)">
+          </f-connection>
+
+          <!-- Render Table Nodes -->
+          <div
+            *ngFor="let table of tables"
+            fNode
+            [fNodeId]="table.id"
+            [fNodePosition]="table.position"
+            (fNodePositionChange)="onNodePositionChange(table.id, $event)"
+            class="table-node"
+            [class.selected]="selectedElementType === 'table' && selectedTable?.id === table.id">
+            
+            <!-- Table Title with Drag Handle -->
+            <div fDragHandle class="table-header" (click)="selectElement('table', table)">
+              <div class="schema-badge">{{ table.schemaName }}</div>
+              <div class="table-title" [title]="table.name">{{ table.name }}</div>
+            </div>
+
+            <!-- Table Columns List -->
+            <div class="table-columns">
+              <div
+                *ngFor="let col of table.columns"
+                class="column-row"
+                [class.selected]="selectedElementType === 'column' && selectedColumn?.id === col.id"
+                (click)="selectElement('column', table, col); $event.stopPropagation()">
+                
+                <!-- Input port (left dot connector) -->
+                <div fNodeInput [fInputId]="col.id" class="port input-port" title="Link destination"></div>
+
+                <!-- Column Type Details -->
+                <div class="column-details">
+                  <span class="column-key">
+                    <span *ngIf="col.isPrimaryKey === 1" class="pk-key" title="Primary Key">🔑</span>
+                    <span *ngIf="col.isForeignKey === 1" class="fk-key" title="Foreign Key (Referencing {{col.fkTable}}.{{col.fkColumn}})">🔗</span>
+                  </span>
+                  <span class="column-name" [title]="col.name">{{ col.name }}</span>
+                  <span class="column-type" [title]="col.dataType">{{ col.dataType }}</span>
+                </div>
+
+                <!-- Output port (right dot connector) -->
+                <div fNodeOutput [fOutputId]="col.id" class="port output-port" title="Drag to create link"></div>
+              </div>
+            </div>
+          </div>
+        </f-canvas>
+      </f-flow>
+      
+      <!-- Canvas helper instructions overlay -->
+      <div class="canvas-help-overlay">
+        💡 Double-click any connection line to delete a relationship. Drag from right dot 🔵 to left dot 🔵 of another table to link columns.
+      </div>
+    </main>
+
+    <!-- Details/Editor Sidebar -->
+    <aside class="details-sidebar" [class.open]="selectedElementType !== null">
+      <div class="sidebar-header" *ngIf="selectedElementType !== null">
+        <h2>Metadata Details</h2>
+        <button class="close-btn" (click)="clearSelection()">✕</button>
+      </div>
+
+      <div class="sidebar-body" *ngIf="selectedElementType !== null">
+        <!-- Table editing -->
+        <div *ngIf="selectedElementType === 'table' && selectedTable">
+          <div class="metadata-group">
+            <label>Table Name</label>
+            <div class="value-highlight">{{ selectedTable.schemaName }}.{{ selectedTable.name }}</div>
+          </div>
+          <div class="metadata-group">
+            <label>Database</label>
+            <div class="value-highlight">{{ selectedTable.databaseName }}</div>
+          </div>
+          <div class="metadata-group">
+            <label>Table ID</label>
+            <div class="value-muted">{{ selectedTable.id }}</div>
+          </div>
+        </div>
+
+        <!-- Column editing -->
+        <div *ngIf="selectedElementType === 'column' && selectedColumn && selectedTable">
+          <div class="metadata-group">
+            <label>Column Name</label>
+            <div class="value-highlight">{{ selectedColumn.name }}</div>
+          </div>
+          <div class="metadata-group">
+            <label>Table context</label>
+            <div class="value-muted">{{ selectedTable.schemaName }}.{{ selectedTable.name }}</div>
+          </div>
+          <div class="metadata-group">
+            <label>Data Type</label>
+            <div class="value-highlight">{{ selectedColumn.dataType }}</div>
+          </div>
+          <div class="metadata-group">
+            <label>Properties</label>
+            <div class="properties-badges">
+              <span class="badge" [class.active]="selectedColumn.isPrimaryKey === 1">Primary Key</span>
+              <span class="badge" [class.active]="selectedColumn.isForeignKey === 1">Foreign Key</span>
+              <span class="badge" [class.active]="selectedColumn.isNullable === 1">Nullable</span>
+            </div>
+          </div>
+          <div class="metadata-group" *ngIf="selectedColumn.isForeignKey === 1">
+            <label>References</label>
+            <div class="value-link">🔗 {{ selectedColumn.fkTable }}.{{ selectedColumn.fkColumn }}</div>
+          </div>
+          <div class="metadata-group" *ngIf="selectedColumn.defaultVal">
+            <label>Default Value</label>
+            <div class="value-highlight"><code>{{ selectedColumn.defaultVal }}</code></div>
+          </div>
+        </div>
+
+        <!-- Description Editor (shared) -->
+        <div class="metadata-group description-group">
+          <label for="descEditor">Description / Comments</label>
+          <textarea
+            id="descEditor"
+            [(ngModel)]="editDescriptionValue"
+            placeholder="No description set. Type here to add documentation...">
+          </textarea>
+        </div>
+
+        <button class="save-btn" (click)="saveDescription()">Save Changes</button>
+      </div>
+
+      <div class="sidebar-empty" *ngIf="selectedElementType === null">
+        <div class="empty-state-icon">📋</div>
+        <p>Select a table header or column row to view and edit description metadata.</p>
+      </div>
+    </aside>
+  </div>
+</div>

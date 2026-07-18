@@ -71,7 +71,8 @@
           {"name": "name", "type": "TEXT"},
           {"name": "schema_name", "type": "TEXT"},
           {"name": "database_name", "type": "TEXT"},
-          {"name": "description", "type": "TEXT"}
+          {"name": "description", "type": "TEXT"},
+          {"name": "metadata", "type": "TEXT", "note": "Lưu định dạng JSON"}
         ]
       },
       {

@@ -1,0 +1,75 @@
+@import "@foblex/flow/index.css";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-primary: #0d0f12;
+  --bg-secondary: #161a22;
+  --bg-tertiary: #1f2530;
+  --border-color: #2b3547;
+  --text-primary: #f0f4f9;
+  --text-secondary: #9aa0a6;
+  --accent-color: #4a90e2;
+  --accent-glow: rgba(74, 144, 226, 0.15);
+  --success-color: #34c759;
+  --danger-color: #ff3b30;
+  --font-family: 'Outfit', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
+
+/* Canvas board styles */
+.f-flow {
+  background-color: var(--bg-primary) !important;
+  background-image: 
+    radial-gradient(var(--border-color) 1px, transparent 1px) !important;
+  background-size: 24px 24px !important;
+  width: 100%;
+  height: 100%;
+}
+
+.f-connection {
+  stroke: #5a6b85 !important;
+  stroke-width: 2px !important;
+  fill: none !important;
+}
+
+.f-connection:hover {
+  stroke: var(--accent-color) !important;
+  stroke-width: 3px !important;
+}
+
+.f-connection-for-create-helper {
+  stroke: var(--accent-color) !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 5, 5 !important;
+  fill: none !important;
+}
