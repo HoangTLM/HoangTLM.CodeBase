@@ -458,7 +458,7 @@ namespace HoangTLM.CodeBase.DatabaseScanner.Sqlite
                 await connection.OpenAsync();
 
                 var scannedRoutineIds = new HashSet<string>();
-                var routineMetadataList = new List<(string FileId, string EntityId, DbRoutine Routine, string RelativePath, string AbsolutePath)>();
+                var routineMetadataList = new List<(string FileId, string EntityId, DbRoutine Routine, string RelativePath, string AbsolutePath, string Type)>();
 
                 foreach (var r in routines)
                 {
@@ -481,7 +481,15 @@ namespace HoangTLM.CodeBase.DatabaseScanner.Sqlite
                     string entityId = ComputeHash($"{projectId}:{typeLabel}:{r.SchemaName}.{r.Name}");
 
                     scannedRoutineIds.Add(entityId);
-                    routineMetadataList.Add((fileId, entityId, r, relativePath, absolutePath));
+                    routineMetadataList.Add((fileId, entityId, r, relativePath, absolutePath, typeLabel));
+
+                    // Generate a "store" endpoint if naming prefix is matched (usp_data_xxxx_yyyy)
+                    if (typeLabel == "StoredProcedure" && r.Name.StartsWith("usp_data_", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string storeEntityId = ComputeHash($"{projectId}:store:{r.SchemaName}.{r.Name}");
+                        scannedRoutineIds.Add(storeEntityId);
+                        routineMetadataList.Add((fileId, storeEntityId, r, relativePath, absolutePath, "store"));
+                    }
                 }
 
                 var existingRoutines = new Dictionary<string, (string FileId, string Name)>();
@@ -489,7 +497,7 @@ namespace HoangTLM.CodeBase.DatabaseScanner.Sqlite
                     SELECT e.id, e.file_id, e.name 
                     FROM entities e
                     INNER JOIN files f ON e.file_id = f.id
-                    WHERE f.project_id = @projectId AND e.type IN ('StoredProcedure', 'Function', 'Trigger');";
+                    WHERE f.project_id = @projectId AND e.type IN ('StoredProcedure', 'Function', 'Trigger', 'store');";
 
                 using (var command = new SqliteCommand(getRoutinesQuery, connection))
                 {
@@ -510,8 +518,7 @@ namespace HoangTLM.CodeBase.DatabaseScanner.Sqlite
                 {
                     foreach (var rm in routineMetadataList)
                     {
-                        string typeLabel = rm.Routine.Type.Contains("FUNCTION") ? "Function" :
-                                           rm.Routine.Type.Contains("TRIGGER") ? "Trigger" : "StoredProcedure";
+                        string typeLabel = rm.Type;
 
                         string dir = Path.GetDirectoryName(rm.AbsolutePath);
                         if (!Directory.Exists(dir))
@@ -566,9 +573,13 @@ namespace HoangTLM.CodeBase.DatabaseScanner.Sqlite
                             }
                         }
 
-                        var metadataObj = new { definition = rm.Routine.Definition };
+                        var metadataObj = typeLabel == "store"
+                            ? (object)new { code = rm.Routine.Definition, definition = rm.Routine.Definition }
+                            : (object)new { definition = rm.Routine.Definition };
                         string metadataJson = JsonSerializer.Serialize(metadataObj);
-                        string signature = $"CREATE {typeLabel.ToUpper()} {rm.Routine.SchemaName}.{rm.Routine.Name}";
+                        string signature = typeLabel == "store" 
+                            ? $"EXECUTE {rm.Routine.SchemaName}.{rm.Routine.Name}" 
+                            : $"CREATE {typeLabel.ToUpper()} {rm.Routine.SchemaName}.{rm.Routine.Name}";
 
                         if (!entityExists)
                         {
