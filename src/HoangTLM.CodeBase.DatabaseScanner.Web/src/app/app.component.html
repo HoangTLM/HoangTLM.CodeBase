@@ -65,7 +65,7 @@
                     <span class="name">Stored Procedures</span>
                   </div>
                   <div class="group-items">
-                    <div *ngFor="let r of getRoutinesByType('SQL_STORED_PROCEDURE')" 
+                    <div *ngFor="let r of getRoutinesByType('StoredProcedure')" 
                          class="tree-item leaf"
                          [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === r.id"
                          (click)="onTreeItemSelect('routine', r)">
@@ -82,7 +82,7 @@
                     <span class="name">Triggers</span>
                   </div>
                   <div class="group-items">
-                    <div *ngFor="let r of getRoutinesByType('SQL_TRIGGER')" 
+                    <div *ngFor="let r of getRoutinesByType('Trigger')" 
                          class="tree-item leaf"
                          [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === r.id"
                          (click)="onTreeItemSelect('routine', r)">
@@ -99,7 +99,7 @@
                     <span class="name">Functions</span>
                   </div>
                   <div class="group-items">
-                    <div *ngFor="let r of getRoutinesByType('SQL_SCALAR_FUNCTION') || getRoutinesByType('SQL_TABLE_VALUED_FUNCTION') || getRoutinesByType('SQL_INLINE_TABLE_VALUED_FUNCTION')" 
+                    <div *ngFor="let r of getRoutinesByType('Function')" 
                          class="tree-item leaf"
                          [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === r.id"
                          (click)="onTreeItemSelect('routine', r)">
@@ -113,6 +113,32 @@
             </div>
           </div>
         </div>
+
+        <!-- BE Root Node -->
+        <div class="tree-node database-node" style="margin-top: 16px;">
+          <div class="node-header">
+            <span class="icon">💻</span>
+            <span class="name">BE (Backend API)</span>
+          </div>
+          <div class="node-children">
+            <div class="tree-group">
+              <div class="group-header">
+                <span class="icon">📁</span>
+                <span class="name">Store Endpoints ({{ getRoutinesByType('store').length }})</span>
+              </div>
+              <div class="group-items">
+                <div *ngFor="let r of getRoutinesByType('store')" 
+                     class="tree-item leaf"
+                     [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === r.id"
+                     (click)="onTreeItemSelect('routine', r)">
+                  <span class="item-icon">🔌</span>
+                  <span class="item-name" [title]="r.name">{{ r.name }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </aside>
 
