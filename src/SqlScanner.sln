@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoangTLM.CodeBase.DatabaseScanner", "HoangTLM.CodeBase.DatabaseScanner\HoangTLM.CodeBase.DatabaseScanner.csproj", "{37E98D35-0104-45FE-80F6-29613DD499EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoangTLM.CodeBase.DatabaseScanner.App", "HoangTLM.CodeBase.DatabaseScanner.App\HoangTLM.CodeBase.DatabaseScanner.App.csproj", "{8E955774-0F8C-4AB5-AD95-AD643542C020}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{37E98D35-0104-45FE-80F6-29613DD499EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37E98D35-0104-45FE-80F6-29613DD499EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37E98D35-0104-45FE-80F6-29613DD499EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37E98D35-0104-45FE-80F6-29613DD499EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E955774-0F8C-4AB5-AD95-AD643542C020}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E955774-0F8C-4AB5-AD95-AD643542C020}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E955774-0F8C-4AB5-AD95-AD643542C020}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E955774-0F8C-4AB5-AD95-AD643542C020}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,109 @@
+{
+  "database_schema": {
+    "name": "Multi-Layer Code & DB Architecture",
+    "description": "Schema used for managing projects, source code entities, inter-entity relations, and database schemas.",
+    "agent_instructions": [
+      "Sử dụng TEXT hash cho tất cả các ID (Primary Key/Foreign Key) thay vì kiểu INTEGER tuần tự.",
+      "Cột 'metadata' trong các bảng entities và relations lưu trữ dữ liệu dưới định dạng JSON linh hoạt.",
+      "Bảng projects hỗ trợ cấu trúc cây thông qua 'parent_id'.",
+      "Bảng 'entities' thay thế cho 'endpoints + functions từ MCP'. Bảng 'relations' thay thế cho 'endpoint_functions'.",
+      "Bảng fts_entities (FTS5) được dùng để tìm kiếm văn bản tốc độ cao và tự động đồng bộ (auto-sync) qua các triggers, không cập nhật thủ công."
+    ],
+    "tables": [
+      {
+        "table_name": "projects",
+        "layer": "Project/File Layer",
+        "columns": [
+          {"name": "id", "type": "TEXT", "is_primary_key": true},
+          {"name": "parent_id", "type": "TEXT", "is_foreign_key": true, "references": "projects.id", "note": "Cho phép tổ chức projects theo cấu trúc cây"},
+          {"name": "name", "type": "TEXT"},
+          {"name": "path", "type": "TEXT"},
+          {"name": "type", "type": "TEXT"},
+          {"name": "language", "type": "TEXT"},
+          {"name": "scanned_at", "type": "DATETIME"},
+          {"name": "description", "type": "TEXT"}
+        ]
+      },
+      {
+        "table_name": "files",
+        "layer": "Project/File Layer",
+        "columns": [
+          {"name": "id", "type": "TEXT", "is_primary_key": true},
+          {"name": "project_id", "type": "TEXT", "is_foreign_key": true, "references": "projects.id"},
+          {"name": "relative_path", "type": "TEXT"},
+          {"name": "absolute_path", "type": "TEXT"},
+          {"name": "description", "type": "TEXT"}
+        ]
+      },
+      {
+        "table_name": "entities",
+        "layer": "Code Entities/Relations",
+        "columns": [
+          {"name": "id", "type": "TEXT", "is_primary_key": true},
+          {"name": "file_id", "type": "TEXT", "is_foreign_key": true, "references": "files.id"},
+          {"name": "name", "type": "TEXT"},
+          {"name": "type", "type": "TEXT"},
+          {"name": "signature", "type": "TEXT"},
+          {"name": "start_line", "type": "INTEGER"},
+          {"name": "end_line", "type": "INTEGER"},
+          {"name": "metadata", "type": "TEXT", "note": "Lưu định dạng JSON"},
+          {"name": "description", "type": "TEXT"}
+        ]
+      },
+      {
+        "table_name": "relations",
+        "layer": "Code Entities/Relations",
+        "columns": [
+          {"name": "id", "type": "TEXT", "is_primary_key": true},
+          {"name": "source_entity_id", "type": "TEXT", "is_foreign_key": true, "references": "entities.id"},
+          {"name": "target_entity_id", "type": "TEXT", "is_foreign_key": true, "references": "entities.id"},
+          {"name": "type", "type": "TEXT"},
+          {"name": "metadata", "type": "TEXT", "note": "Lưu định dạng JSON"},
+          {"name": "description", "type": "TEXT"}
+        ]
+      },
+      {
+        "table_name": "db_tables",
+        "layer": "Database Schema",
+        "columns": [
+          {"name": "id", "type": "TEXT", "is_primary_key": true},
+          {"name": "project_id", "type": "TEXT", "is_foreign_key": true, "references": "projects.id"},
+          {"name": "name", "type": "TEXT"},
+          {"name": "schema_name", "type": "TEXT"},
+          {"name": "database_name", "type": "TEXT"},
+          {"name": "description", "type": "TEXT"}
+        ]
+      },
+      {
+        "table_name": "db_columns",
+        "layer": "Database Schema",
+        "columns": [
+          {"name": "id", "type": "TEXT", "is_primary_key": true},
+          {"name": "table_id", "type": "TEXT", "is_foreign_key": true, "references": "db_tables.id"},
+          {"name": "name", "type": "TEXT"},
+          {"name": "data_type", "type": "TEXT"},
+          {"name": "max_length", "type": "INTEGER"},
+          {"name": "is_nullable", "type": "INTEGER"},
+          {"name": "is_primary_key", "type": "INTEGER"},
+          {"name": "is_foreign_key", "type": "INTEGER"},
+          {"name": "fk_table", "type": "TEXT"},
+          {"name": "fk_column", "type": "TEXT"},
+          {"name": "default_val", "type": "TEXT"},
+          {"name": "description", "type": "TEXT"}
+        ]
+      },
+      {
+        "table_name": "fts_entities",
+        "layer": "Virtual Table (FTS5)",
+        "type": "virtual_table",
+        "columns": [
+          {"name": "id", "type": "TEXT", "note": "UNINDEXED"},
+          {"name": "name", "type": "TEXT"},
+          {"name": "type", "type": "TEXT"},
+          {"name": "signature", "type": "TEXT"},
+          {"name": "description", "type": "TEXT"}
+        ]
+      }
+    ]
+  }
+}
