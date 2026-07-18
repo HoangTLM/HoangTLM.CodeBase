@@ -1,4 +1,4 @@
 {
-  "sqliteDbPath": "../../metadata.db",
+  "sqliteDbPath": "../metadata.db",
   "targetProjectPath": "../HoangTLM.CodeBase.DatabaseScanner.Web"
 }

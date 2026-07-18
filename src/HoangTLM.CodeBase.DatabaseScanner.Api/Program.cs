@@ -26,7 +26,7 @@ var app = builder.Build();
 
 app.UseCors("AllowAll");
 
-string GetConnectionString() => app.Configuration.GetConnectionString("SqliteConnectionString") ?? "Data Source=metadata.db;";
+string GetConnectionString() => app.Configuration.GetConnectionString("SqliteConnectionString") ?? "Data Source=../metadata.db;";
 
 // 1. GET /api/projects
 app.MapGet("/api/projects", async () =>
