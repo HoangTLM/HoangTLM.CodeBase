@@ -28,3 +28,6 @@ scanned_sql/
 # OS files
 .DS_Store
 Thumbs.db
+
+# System generated folders
+Library/

@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Database Scanner",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/HoangTLM.CodeBase.DatabaseScanner.App/bin/Debug/net8.0/HoangTLM.CodeBase.DatabaseScanner.App.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/HoangTLM.CodeBase.DatabaseScanner.App",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        }
+    ]
+}
