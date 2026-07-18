@@ -1,164 +1,409 @@
 <div class="app-container">
-  <!-- Header Bar -->
+  <!-- Top Header Bar -->
   <header class="app-header">
     <div class="brand">
-      <span class="brand-icon">📊</span>
-      <h1>Database ERD Catalog Viewer</h1>
+      <span class="brand-icon">🌐</span>
+      <h1>Database Architecture ERD Catalog</h1>
     </div>
     
-    <div class="project-selector-container">
-      <label for="projectSelect">Active Scan Project:</label>
+    <div class="project-selector">
+      <label for="projectSelect">Database Scan Profile:</label>
       <select id="projectSelect" [value]="selectedProjectId" (change)="onProjectChange($event)">
         <option *ngFor="let p of projects" [value]="p.id">
-          {{ p.name }} ({{ p.scannedAt | date:'medium' }})
+          {{ p.name }} ({{ p.scannedAt | date:'short' }})
         </option>
       </select>
     </div>
   </header>
 
-  <!-- Workspace split -->
+  <!-- Main Workspace -->
   <div class="app-workspace">
-    <!-- Main flow canvas -->
-    <main class="canvas-container">
-      <f-flow fDraggable (fCreateConnection)="onCreateConnection($event)">
-        <f-canvas>
-          <!-- Helper guide when dragging a new link -->
-          <f-connection-for-create></f-connection-for-create>
+    
+    <!-- LEFT SIDEBAR: TREE VIEW -->
+    <aside class="tree-sidebar">
+      <div class="tree-title">🗂️ Catalog Explorer</div>
+      <div class="tree-root">
+        <!-- Database Root Node -->
+        <div class="tree-node database-node">
+          <div class="node-header">
+            <span class="icon">🖳</span>
+            <span class="name" [title]="databaseName">{{ databaseName }}</span>
+          </div>
 
-          <!-- Render existing relationships as lines -->
-          <f-connection
-            *ngFor="let conn of connections"
-            [fConnectionId]="conn.id"
-            [fOutputId]="conn.source"
-            [fInputId]="conn.target"
-            class="erd-connection"
-            (dblclick)="onConnectionDoubleClick(conn)">
-          </f-connection>
+          <!-- Schema Node -->
+          <div class="node-children">
+            <div class="tree-node schema-node">
+              <div class="node-header">
+                <span class="icon">📦</span>
+                <span class="name">{{ schemaName }}</span>
+              </div>
 
-          <!-- Render Table Nodes -->
-          <div
-            *ngFor="let table of tables"
-            fNode
-            [fNodeId]="table.id"
-            [fNodePosition]="table.position"
-            (fNodePositionChange)="onNodePositionChange(table.id, $event)"
-            class="table-node"
-            [class.selected]="selectedElementType === 'table' && selectedTable?.id === table.id">
-            
-            <!-- Table Title with Drag Handle -->
-            <div fDragHandle class="table-header" (click)="selectElement('table', table)">
-              <div class="schema-badge">{{ table.schemaName }}</div>
-              <div class="table-title" [title]="table.name">{{ table.name }}</div>
-            </div>
-
-            <!-- Table Columns List -->
-            <div class="table-columns">
-              <div
-                *ngFor="let col of table.columns"
-                class="column-row"
-                [class.selected]="selectedElementType === 'column' && selectedColumn?.id === col.id"
-                (click)="selectElement('column', table, col); $event.stopPropagation()">
+              <!-- Nested Children Groups -->
+              <div class="node-children">
                 
-                <!-- Input port (left dot connector) -->
-                <div fNodeInput [fInputId]="col.id" class="port input-port" title="Link destination"></div>
-
-                <!-- Column Type Details -->
-                <div class="column-details">
-                  <span class="column-key">
-                    <span *ngIf="col.isPrimaryKey === 1" class="pk-key" title="Primary Key">🔑</span>
-                    <span *ngIf="col.isForeignKey === 1" class="fk-key" title="Foreign Key (Referencing {{col.fkTable}}.{{col.fkColumn}})">🔗</span>
-                  </span>
-                  <span class="column-name" [title]="col.name">{{ col.name }}</span>
-                  <span class="column-type" [title]="col.dataType">{{ col.dataType }}</span>
+                <!-- 1. Tables Group -->
+                <div class="tree-group">
+                  <div class="group-header">
+                    <span class="icon">📁</span>
+                    <span class="name">Tables ({{ allTables.length }})</span>
+                  </div>
+                  <div class="group-items">
+                    <div *ngFor="let t of allTables" 
+                         class="tree-item leaf" 
+                         [class.active]="selectedTreeItem?.type === 'table' && selectedTreeItem?.id === t.id"
+                         (click)="onTreeItemSelect('table', t)">
+                      <span class="item-icon">📋</span>
+                      <span class="item-name" [title]="t.name">{{ t.name }}</span>
+                    </div>
+                  </div>
                 </div>
 
-                <!-- Output port (right dot connector) -->
-                <div fNodeOutput [fOutputId]="col.id" class="port output-port" title="Drag to create link"></div>
+                <!-- 2. Stored Procedures Group -->
+                <div class="tree-group">
+                  <div class="group-header">
+                    <span class="icon">📁</span>
+                    <span class="name">Stored Procedures</span>
+                  </div>
+                  <div class="group-items">
+                    <div *ngFor="let r of getRoutinesByType('SQL_STORED_PROCEDURE')" 
+                         class="tree-item leaf"
+                         [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === r.id"
+                         (click)="onTreeItemSelect('routine', r)">
+                      <span class="item-icon">⚙️</span>
+                      <span class="item-name" [title]="r.name">{{ r.name }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3. Triggers Group -->
+                <div class="tree-group">
+                  <div class="group-header">
+                    <span class="icon">📁</span>
+                    <span class="name">Triggers</span>
+                  </div>
+                  <div class="group-items">
+                    <div *ngFor="let r of getRoutinesByType('SQL_TRIGGER')" 
+                         class="tree-item leaf"
+                         [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === r.id"
+                         (click)="onTreeItemSelect('routine', r)">
+                      <span class="item-icon">⚡</span>
+                      <span class="item-name" [title]="r.name">{{ r.name }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 4. Functions Group -->
+                <div class="tree-group">
+                  <div class="group-header">
+                    <span class="icon">📁</span>
+                    <span class="name">Functions</span>
+                  </div>
+                  <div class="group-items">
+                    <div *ngFor="let r of getRoutinesByType('SQL_SCALAR_FUNCTION') || getRoutinesByType('SQL_TABLE_VALUED_FUNCTION') || getRoutinesByType('SQL_INLINE_TABLE_VALUED_FUNCTION')" 
+                         class="tree-item leaf"
+                         [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === r.id"
+                         (click)="onTreeItemSelect('routine', r)">
+                      <span class="item-icon">ƒ</span>
+                      <span class="item-name" [title]="r.name">{{ r.name }}</span>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
-        </f-canvas>
-      </f-flow>
-      
-      <!-- Canvas helper instructions overlay -->
-      <div class="canvas-help-overlay">
-        💡 Double-click any connection line to delete a relationship. Drag from right dot 🔵 to left dot 🔵 of another table to link columns.
+        </div>
       </div>
+    </aside>
+
+    <!-- CENTER AREA: CANVAS / CODE VIEWER -->
+    <main class="main-content">
+      
+      <!-- Option A: Code Viewer for Stored Procedures/Triggers/Functions -->
+      <div class="code-viewer-panel" *ngIf="selectedTreeItem?.type === 'routine'">
+        <div class="panel-header">
+          <div class="routine-title">
+            <span class="badge-type">{{ selectedTreeItem?.data?.type?.replace('SQL_', '') }}</span>
+            <h2>{{ selectedTreeItem?.name }}</h2>
+          </div>
+          <div class="routine-desc" *ngIf="selectedTreeItem?.data?.description">
+            💬 {{ selectedTreeItem?.data?.description }}
+          </div>
+        </div>
+        <div class="code-editor-container">
+          <pre><code>{{ getRoutineCode() }}</code></pre>
+        </div>
+      </div>
+
+      <!-- Option B: ERD Node Editor Canvas -->
+      <div class="canvas-panel" 
+           *ngIf="selectedTreeItem?.type === 'table'"
+           (contextmenu)="onCanvasContextMenu($event)">
+        
+        <f-flow fDraggable (fCreateConnection)="onCreateConnection($event)">
+          <f-canvas>
+            <f-connection-for-create></f-connection-for-create>
+
+            <!-- Connections / Relationship Links -->
+            <f-connection
+              *ngFor="let conn of connections"
+              [fConnectionId]="conn.id"
+              [fOutputId]="conn.source"
+              [fInputId]="conn.target"
+              class="erd-connection"
+              (dblclick)="onConnectionDoubleClick(conn)"
+              title="Double-click to delete relationship">
+            </f-connection>
+
+            <!-- Table Nodes -->
+            <div
+              *ngFor="let table of displayedTables"
+              fNode
+              [fNodeId]="table.id"
+              [fNodePosition]="table.position"
+              (fNodePositionChange)="onNodePositionChange(table.id, $event)"
+              class="table-node"
+              [class.active-selected]="selectedTreeItem?.id === table.id"
+              [class.selected-element]="selectedElementType === 'table' && selectedTable?.id === table.id">
+              
+              <!-- Header Drag Handle -->
+              <div fDragHandle class="table-header" (click)="selectElement('table', table)">
+                <div class="schema-badge">{{ table.schemaName }}</div>
+                <div class="table-title" [title]="table.name">{{ table.name }}</div>
+              </div>
+
+              <!-- Columns list -->
+              <div class="table-columns">
+                <div
+                  *ngFor="let col of table.columns"
+                  class="column-row"
+                  [class.selected]="selectedElementType === 'column' && selectedColumn?.id === col.id"
+                  (click)="selectElement('column', table, col); $event.stopPropagation()">
+                  
+                  <!-- Left connector dot (Input) -->
+                  <div fNodeInput 
+                       [fInputId]="col.id" 
+                       fInputCategory="column-link" 
+                       class="port input-port" 
+                       title="Link target">
+                  </div>
+
+                  <!-- Column details -->
+                  <div class="column-details">
+                    <span class="column-key">
+                      <span *ngIf="col.isPrimaryKey === 1" class="pk" title="Primary Key">🔑</span>
+                      <span *ngIf="col.isForeignKey === 1" class="fk" title="Foreign Key (references {{col.fkTable}}.{{col.fkColumn}})">🔗</span>
+                    </span>
+                    <span class="column-name" [title]="col.name">{{ col.name }}</span>
+                    <span class="column-type" [title]="col.dataType">{{ col.dataType }}</span>
+                  </div>
+
+                  <!-- Right connector dot (Output) -->
+                  <div fNodeOutput 
+                       [fOutputId]="col.id" 
+                       [fCanBeConnectedInputs]="['column-link']" 
+                       class="port output-port" 
+                       title="Drag to link column">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </f-canvas>
+        </f-flow>
+
+        <!-- Canvas Instructions -->
+        <div class="canvas-help-tip">
+          💡 Right-click canvas to add more tables. Drag from right dot 🔵 to left dot 🔵 to link. Click connections to inspect.
+        </div>
+      </div>
+
     </main>
 
-    <!-- Details/Editor Sidebar -->
+    <!-- RIGHT SIDEBAR: DETAILS & FK EDITOR -->
     <aside class="details-sidebar" [class.open]="selectedElementType !== null">
       <div class="sidebar-header" *ngIf="selectedElementType !== null">
-        <h2>Metadata Details</h2>
+        <h2>Documentation Panel</h2>
         <button class="close-btn" (click)="clearSelection()">✕</button>
       </div>
 
       <div class="sidebar-body" *ngIf="selectedElementType !== null">
-        <!-- Table editing -->
+        
+        <!-- Case A: Selected Table details -->
         <div *ngIf="selectedElementType === 'table' && selectedTable">
           <div class="metadata-group">
             <label>Table Name</label>
-            <div class="value-highlight">{{ selectedTable.schemaName }}.{{ selectedTable.name }}</div>
+            <div class="value-box highlight">{{ selectedTable.schemaName }}.{{ selectedTable.name }}</div>
           </div>
-          <div class="metadata-group">
-            <label>Database</label>
-            <div class="value-highlight">{{ selectedTable.databaseName }}</div>
-          </div>
-          <div class="metadata-group">
-            <label>Table ID</label>
-            <div class="value-muted">{{ selectedTable.id }}</div>
+          
+          <!-- FOREIGN KEYS VIEW SECTION -->
+          <div class="metadata-group fk-section">
+            <div class="fk-section-header">
+              <label>Foreign Key Relations ({{ getTableFks().length }})</label>
+              <button class="add-fk-btn" (click)="toggleAddFkForm()">
+                {{ showAddFkForm ? '✕ Cancel' : '+ Add FK' }}
+              </button>
+            </div>
+
+            <!-- FK Form -->
+            <div class="add-fk-form" *ngIf="showAddFkForm">
+              <h4>Create Column Link</h4>
+              <div class="form-field">
+                <label>Source Column</label>
+                <select [(ngModel)]="fkSourceColId">
+                  <option *ngFor="let col of selectedTable.columns" [value]="col.id">
+                    {{ col.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Target Table</label>
+                <select [(ngModel)]="fkTargetTableId" (change)="onFkTargetTableChange()">
+                  <option *ngFor="let t of allTables" [value]="t.id">
+                    {{ t.schemaName }}.{{ t.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Target Column</label>
+                <select [(ngModel)]="fkTargetColId">
+                  <ng-container *ngFor="let t of allTables">
+                    <ng-container *ngIf="t.id === fkTargetTableId">
+                      <option *ngFor="let col of t.columns" [value]="col.id">
+                        {{ col.name }}
+                      </option>
+                    </ng-container>
+                  </ng-container>
+                </select>
+              </div>
+              <button class="submit-fk-btn" (click)="saveCustomFk()">Establish Relation</button>
+            </div>
+
+            <!-- FK List -->
+            <div class="fk-list" *ngIf="!showAddFkForm">
+              <div *ngFor="let fk of getTableFks()" 
+                   class="fk-item" 
+                   (click)="selectFkColumn(fk)">
+                <span class="fk-src"><code>{{ fk.name }}</code></span>
+                <span class="fk-arrow">➔</span>
+                <span class="fk-dest" [title]="fk.fkTable + '.' + fk.fkColumn">
+                  <code>{{ fk.fkTable }}.{{ fk.fkColumn }}</code>
+                </span>
+              </div>
+              <div class="fk-empty" *ngIf="getTableFks().length === 0">
+                No foreign keys defined for this table. Click "+ Add FK" to create one.
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Column editing -->
+        <!-- Case B: Selected Column details -->
         <div *ngIf="selectedElementType === 'column' && selectedColumn && selectedTable">
           <div class="metadata-group">
-            <label>Column Name</label>
-            <div class="value-highlight">{{ selectedColumn.name }}</div>
-          </div>
-          <div class="metadata-group">
-            <label>Table context</label>
-            <div class="value-muted">{{ selectedTable.schemaName }}.{{ selectedTable.name }}</div>
+            <label>Column Context</label>
+            <div class="value-box muted">{{ selectedTable.schemaName }}.{{ selectedTable.name }}.{{ selectedColumn.name }}</div>
           </div>
           <div class="metadata-group">
             <label>Data Type</label>
-            <div class="value-highlight">{{ selectedColumn.dataType }}</div>
+            <div class="value-box highlight">{{ selectedColumn.dataType }}</div>
           </div>
           <div class="metadata-group">
-            <label>Properties</label>
-            <div class="properties-badges">
-              <span class="badge" [class.active]="selectedColumn.isPrimaryKey === 1">Primary Key</span>
-              <span class="badge" [class.active]="selectedColumn.isForeignKey === 1">Foreign Key</span>
-              <span class="badge" [class.active]="selectedColumn.isNullable === 1">Nullable</span>
+            <label>Constraints</label>
+            <div class="badges-row">
+              <span class="badge" [class.active]="selectedColumn.isPrimaryKey === 1">🔑 PK</span>
+              <span class="badge" [class.active]="selectedColumn.isForeignKey === 1">🔗 FK</span>
+              <span class="badge" [class.active]="selectedColumn.isNullable === 1">☁️ Nullable</span>
             </div>
           </div>
           <div class="metadata-group" *ngIf="selectedColumn.isForeignKey === 1">
             <label>References</label>
-            <div class="value-link">🔗 {{ selectedColumn.fkTable }}.{{ selectedColumn.fkColumn }}</div>
-          </div>
-          <div class="metadata-group" *ngIf="selectedColumn.defaultVal">
-            <label>Default Value</label>
-            <div class="value-highlight"><code>{{ selectedColumn.defaultVal }}</code></div>
+            <div class="value-box link">➔ {{ selectedColumn.fkTable }}.{{ selectedColumn.fkColumn }}</div>
           </div>
         </div>
 
-        <!-- Description Editor (shared) -->
-        <div class="metadata-group description-group">
-          <label for="descEditor">Description / Comments</label>
+        <!-- SHARED: Description Editor -->
+        <div class="metadata-group desc-editor-group">
+          <label for="commentField">Documentation Description</label>
           <textarea
-            id="descEditor"
+            id="commentField"
             [(ngModel)]="editDescriptionValue"
-            placeholder="No description set. Type here to add documentation...">
+            placeholder="Write markdown or comments for this schema element...">
           </textarea>
         </div>
 
-        <button class="save-btn" (click)="saveDescription()">Save Changes</button>
+        <button class="save-desc-btn" (click)="saveDescription()">Update Comments</button>
       </div>
 
-      <div class="sidebar-empty" *ngIf="selectedElementType === null">
-        <div class="empty-state-icon">📋</div>
-        <p>Select a table header or column row to view and edit description metadata.</p>
+      <!-- Empty state right sidebar -->
+      <div class="sidebar-empty-state" *ngIf="selectedElementType === null">
+        <div class="empty-icon">📝</div>
+        <p>Select any table header or column item to inspect metadata properties, view/create relationships, and add comments.</p>
       </div>
     </aside>
+
   </div>
+
+  <!-- CANVAS RIGHT-CLICK CONTEXT MENU -->
+  <div class="context-menu" 
+       *ngIf="contextMenu.visible"
+       [style.left.px]="contextMenu.x"
+       [style.top.px]="contextMenu.y">
+    <div class="menu-item" (click)="openAddTableModal()">
+      ➕ Add Table to Canvas View
+    </div>
+  </div>
+
+  <!-- ADD TABLE AND LINK MODAL DIALOG -->
+  <div class="modal-backdrop" *ngIf="showAddTableModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Add Table to Current Canvas</h3>
+        <button class="modal-close" (click)="closeAddTableModal()">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        <p class="modal-tip">To add a table, you must establish at least one foreign key connection between the selected table and the added table.</p>
+        
+        <div class="form-group" *ngIf="selectedTable">
+          <label>Selected Table: <strong>{{ selectedTable.name }}</strong></label>
+          <select [(ngModel)]="modalSourceColId">
+            <option *ngFor="let col of selectedTable.columns" [value]="col.id">
+              {{ col.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Select Table to Add</label>
+          <select [(ngModel)]="modalSelectedTableId" (change)="onModalSelectedTableChange()">
+            <option *ngFor="let t of getModalAvailableTables()" [value]="t.id">
+              {{ t.schemaName }}.{{ t.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Link with Column of Added Table</label>
+          <select [(ngModel)]="modalTargetColId">
+            <ng-container *ngFor="let t of allTables">
+              <ng-container *ngIf="t.id === modalSelectedTableId">
+                <option *ngFor="let col of t.columns" [value]="col.id">
+                  {{ col.name }}
+                </option>
+              </ng-container>
+            </ng-container>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-cancel" (click)="closeAddTableModal()">Cancel</button>
+        <button class="btn btn-save" 
+                [disabled]="!modalSelectedTableId"
+                (click)="saveAddTableAndLink()">
+          Add & Link Table
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>

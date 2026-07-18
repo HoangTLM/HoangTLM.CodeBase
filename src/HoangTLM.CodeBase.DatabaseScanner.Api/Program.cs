@@ -249,4 +249,39 @@ app.MapDelete("/api/relationships/{columnId}", async (string columnId) =>
     return Results.Ok(new { Success = true });
 });
 
+app.MapGet("/api/routines/{projectId}", async (string projectId) =>
+{
+    var routines = new List<object>();
+    using (var conn = new SqliteConnection(GetConnectionString()))
+    {
+        await conn.OpenAsync();
+        string query = @"
+            SELECT e.id, e.name, e.type, e.signature, e.description, e.metadata
+            FROM entities e
+            INNER JOIN files f ON e.file_id = f.id
+            WHERE f.project_id = @projectId AND e.type IN ('StoredProcedure', 'Function', 'Trigger')
+            ORDER BY e.type, e.name;";
+        using (var cmd = new SqliteCommand(query, conn))
+        {
+            cmd.Parameters.AddWithValue("@projectId", projectId);
+            using (var reader = await cmd.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    routines.Add(new
+                    {
+                        Id = reader["id"].ToString(),
+                        Name = reader["name"].ToString(),
+                        Type = reader["type"].ToString(),
+                        Signature = reader["signature"].ToString(),
+                        Description = reader["description"] != DBNull.Value ? reader["description"].ToString() : null,
+                        Metadata = reader["metadata"] != DBNull.Value ? reader["metadata"].ToString() : null
+                    });
+                }
+            }
+        }
+    }
+    return Results.Ok(routines);
+});
+
 app.Run();

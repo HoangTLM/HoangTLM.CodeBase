@@ -53,6 +53,10 @@ export class ApiService {
     return this.http.get<SchemaResponse>(`${this.baseUrl}/schema/${projectId}`);
   }
 
+  getRoutines(projectId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/routines/${projectId}`);
+  }
+
   saveTableLayout(tableId: string, x: number, y: number): Observable<any> {
     const metadata = JSON.stringify({ x, y });
     return this.http.put(`${this.baseUrl}/tables/${tableId}/layout`, { metadata });
