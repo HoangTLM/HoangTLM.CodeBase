@@ -44,6 +44,16 @@
             "cwd": "${workspaceFolder}/src/HoangTLM.CodeBase.DotNetScanner.App",
             "console": "internalConsole",
             "stopAtEntry": false
+        },
+        {
+            "name": "Debug Web Scanner",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": ["-r", "ts-node/register"],
+            "program": "${workspaceFolder}/src/HoangTLM.CodeBase.WebScanner/src/index.ts",
+            "cwd": "${workspaceFolder}/src/HoangTLM.CodeBase.WebScanner",
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**"]
         }
     ],
     "compounds": [

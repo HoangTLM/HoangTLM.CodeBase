@@ -53,6 +53,7 @@ export class AppComponent implements OnInit {
 
   // Add Table Modal (Right-click menu action)
   showAddTableModal: boolean = false;
+  showProjectManagerModal: boolean = false;
   modalSelectedTableId: string = '';
   modalSourceColId: string = '';
   modalTargetColId: string = '';
@@ -369,6 +370,20 @@ export class AppComponent implements OnInit {
         },
         error: err => console.error('Failed to update column description', err)
       });
+    } else if (!this.selectedElementType && this.selectedTreeItem?.type === 'routine') {
+      const entityId = this.selectedTreeItem.id;
+      const desc = this.editDescriptionValue;
+      this.apiService.saveEntityDescription(entityId, desc).subscribe({
+        next: () => {
+          const r = this.routines.find(x => x.id === entityId);
+          if (r) r.description = desc;
+          const e = this.contextEntities.find(x => x.id === entityId);
+          if (e) e.description = desc;
+          this.selectedTreeItem!.data.description = desc;
+          alert('Item documentation updated successfully!');
+        },
+        error: err => console.error('Failed to update item description', err)
+      });
     }
   }
 
@@ -499,6 +514,68 @@ export class AppComponent implements OnInit {
           alert(`Table '${addedTable.name}' added to view and linked to '${this.selectedTable!.name}'!`);
         },
         error: err => console.error('Failed to create relationship', err)
+      });
+    }
+  }
+
+  deleteProject(projectId: string, event: Event): void {
+    event.stopPropagation();
+    if (!confirm('Are you sure you want to delete this project? All associated schemas, context entities, and file linkages will be permanently erased.')) {
+      return;
+    }
+
+    this.apiService.deleteProject(projectId).subscribe({
+      next: () => {
+        alert('Project deleted successfully.');
+        this.loadProjects();
+        if (this.selectedProjectId === projectId) {
+          this.selectedProjectId = '';
+          this.allTables = [];
+          this.routines = [];
+          this.contextEntities = [];
+          this.displayedTables = [];
+          this.connections = [];
+          this.selectedTreeItem = null;
+        }
+      },
+      error: err => {
+        console.error('Failed to delete project', err);
+        alert('Error deleting project: ' + err.message);
+      }
+    });
+  }
+
+  deleteSelectedItem(): void {
+    if (!this.selectedTreeItem) return;
+
+    const itemName = this.selectedTreeItem.name;
+    if (!confirm(`Are you sure you want to prune/delete '${itemName}' from the scanned catalog?`)) {
+      return;
+    }
+
+    if (this.selectedTreeItem.type === 'table') {
+      this.apiService.deleteTable(this.selectedTreeItem.id).subscribe({
+        next: () => {
+          alert('Table pruned successfully.');
+          this.selectedTreeItem = null;
+          this.loadData(this.selectedProjectId);
+        },
+        error: err => {
+          console.error('Failed to prune table', err);
+          alert('Error pruning table: ' + err.message);
+        }
+      });
+    } else if (this.selectedTreeItem.type === 'routine') {
+      this.apiService.deleteEntity(this.selectedTreeItem.id).subscribe({
+        next: () => {
+          alert('Item pruned successfully.');
+          this.selectedTreeItem = null;
+          this.loadData(this.selectedProjectId);
+        },
+        error: err => {
+          console.error('Failed to prune entity', err);
+          alert('Error pruning entity: ' + err.message);
+        }
       });
     }
   }

@@ -196,6 +196,30 @@ app.MapPut("/api/columns/{columnId}/description", async (string columnId, HttpCo
     return Results.Ok(new { Success = true });
 });
 
+// 5b. PUT /api/entities/{entityId}/description
+app.MapPut("/api/entities/{entityId}/description", async (string entityId, HttpContext context) =>
+{
+    using var document = await JsonDocument.ParseAsync(context.Request.Body);
+    if (!document.RootElement.TryGetProperty("description", out var descProp))
+    {
+        return Results.BadRequest("Missing 'description' property.");
+    }
+    string description = descProp.GetString();
+
+    using (var conn = new SqliteConnection(GetConnectionString()))
+    {
+        await conn.OpenAsync();
+        string query = "UPDATE entities SET description = @description WHERE id = @id;";
+        using (var cmd = new SqliteCommand(query, conn))
+        {
+            cmd.Parameters.AddWithValue("@description", (object)description ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@id", entityId);
+            await cmd.ExecuteNonQueryAsync();
+        }
+    }
+    return Results.Ok(new { Success = true });
+});
+
 // 6. POST /api/relationships
 app.MapPost("/api/relationships", async (HttpContext context) =>
 {
@@ -294,7 +318,7 @@ app.MapGet("/api/context/{projectId}", async (string projectId) =>
             SELECT e.id, e.name, e.type, e.signature, e.start_line, e.end_line, e.metadata, e.description, f.relative_path
             FROM entities e
             INNER JOIN files f ON e.file_id = f.id
-            WHERE f.project_id = @projectId AND e.type IN ('class', 'interface', 'method', 'enum', 'const', 'endpoint', 'queue', 'schedule', 'controller')
+            WHERE f.project_id = @projectId AND e.type IN ('class', 'interface', 'method', 'enum', 'const', 'endpoint', 'queue', 'schedule', 'controller', 'component', 'service', 'directive', 'html-element', 'event-binding', 'property-binding')
             ORDER BY e.type, e.name;";
         using (var cmd = new SqliteCommand(query, conn))
         {
@@ -320,6 +344,151 @@ app.MapGet("/api/context/{projectId}", async (string projectId) =>
         }
     }
     return Results.Ok(entities);
+});
+
+app.MapDelete("/api/projects/{projectId}", async (string projectId) =>
+{
+    using (var conn = new SqliteConnection(GetConnectionString()))
+    {
+        await conn.OpenAsync();
+        using (var tx = (SqliteTransaction)await conn.BeginTransactionAsync())
+        {
+            try
+            {
+                string deleteRels = @"
+                    DELETE FROM relations 
+                    WHERE source_entity_id IN (SELECT e.id FROM entities e INNER JOIN files f ON e.file_id = f.id WHERE f.project_id = @projectId)
+                       OR target_entity_id IN (SELECT e.id FROM entities e INNER JOIN files f ON e.file_id = f.id WHERE f.project_id = @projectId);";
+                using (var cmd = new SqliteCommand(deleteRels, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@projectId", projectId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Delete entities
+                string deleteEntities = "DELETE FROM entities WHERE file_id IN (SELECT id FROM files WHERE project_id = @projectId);";
+                using (var cmd = new SqliteCommand(deleteEntities, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@projectId", projectId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Delete db_columns
+                string deleteCols = "DELETE FROM db_columns WHERE table_id IN (SELECT id FROM db_tables WHERE project_id = @projectId);";
+                using (var cmd = new SqliteCommand(deleteCols, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@projectId", projectId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Delete db_tables
+                string deleteTables = "DELETE FROM db_tables WHERE project_id = @projectId;";
+                using (var cmd = new SqliteCommand(deleteTables, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@projectId", projectId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Delete files
+                string deleteFiles = "DELETE FROM files WHERE project_id = @projectId;";
+                using (var cmd = new SqliteCommand(deleteFiles, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@projectId", projectId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Delete project
+                string deleteProject = "DELETE FROM projects WHERE id = @projectId;";
+                using (var cmd = new SqliteCommand(deleteProject, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@projectId", projectId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                await tx.CommitAsync();
+                return Results.Ok(new { message = "Project deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                return Results.Problem(ex.Message);
+            }
+        }
+    }
+});
+
+app.MapDelete("/api/tables/{tableId}", async (string tableId) =>
+{
+    using (var conn = new SqliteConnection(GetConnectionString()))
+    {
+        await conn.OpenAsync();
+        using (var tx = (SqliteTransaction)await conn.BeginTransactionAsync())
+        {
+            try
+            {
+                // Delete columns
+                string deleteCols = "DELETE FROM db_columns WHERE table_id = @tableId;";
+                using (var cmd = new SqliteCommand(deleteCols, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@tableId", tableId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Delete table
+                string deleteTable = "DELETE FROM db_tables WHERE id = @tableId;";
+                using (var cmd = new SqliteCommand(deleteTable, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@tableId", tableId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                await tx.CommitAsync();
+                return Results.Ok(new { message = "Table deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                return Results.Problem(ex.Message);
+            }
+        }
+    }
+});
+
+app.MapDelete("/api/entities/{entityId}", async (string entityId) =>
+{
+    using (var conn = new SqliteConnection(GetConnectionString()))
+    {
+        await conn.OpenAsync();
+        using (var tx = (SqliteTransaction)await conn.BeginTransactionAsync())
+        {
+            try
+            {
+                // Delete relations
+                string deleteRels = "DELETE FROM relations WHERE source_entity_id = @entityId OR target_entity_id = @entityId;";
+                using (var cmd = new SqliteCommand(deleteRels, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@entityId", entityId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Delete entity
+                string deleteEntity = "DELETE FROM entities WHERE id = @entityId;";
+                using (var cmd = new SqliteCommand(deleteEntity, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@entityId", entityId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                await tx.CommitAsync();
+                return Results.Ok(new { message = "Entity deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                return Results.Problem(ex.Message);
+            }
+        }
+    }
 });
 
 app.Run();

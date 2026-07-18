@@ -74,11 +74,27 @@ export class ApiService {
     return this.http.put(`${this.baseUrl}/columns/${columnId}/description`, { description });
   }
 
+  saveEntityDescription(entityId: string, description: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/entities/${entityId}/description`, { description });
+  }
+
   createRelationship(sourceColumnId: string, targetTable: string, targetColumn: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/relationships`, { sourceColumnId, targetTable, targetColumn });
   }
 
   deleteRelationship(columnId: string): Observable<any> {
     return this.http.delete(`${this.baseUrl}/relationships/${columnId}`);
+  }
+
+  deleteProject(projectId: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/projects/${projectId}`);
+  }
+
+  deleteTable(tableId: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/tables/${tableId}`);
+  }
+
+  deleteEntity(entityId: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/entities/${entityId}`);
   }
 }

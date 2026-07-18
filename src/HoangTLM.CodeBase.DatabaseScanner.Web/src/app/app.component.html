@@ -10,9 +10,10 @@
       <label for="projectSelect">Database Scan Profile:</label>
       <select id="projectSelect" [value]="selectedProjectId" (change)="onProjectChange($event)">
         <option *ngFor="let p of projects" [value]="p.id">
-          {{ p.name }} ({{ p.scannedAt | date:'short' }})
+          {{ p.name }}
         </option>
       </select>
+      <button class="btn btn-secondary btn-sm" style="margin-left: 8px; cursor: pointer; padding: 4px 8px; background: #2a2d3e; border: 1px solid #ff4d4f66; color: #f8f8f2; border-radius: 4px;" (click)="showProjectManagerModal = true">⚙️ Manage</button>
     </div>
   </header>
 
@@ -252,6 +253,85 @@
           </div>
         </div>
 
+        <!-- FE Angular Source Root Node -->
+        <div class="tree-node database-node" style="margin-top: 16px;">
+          <div class="node-header">
+            <span class="icon">💻</span>
+            <span class="name">FE (Angular Source)</span>
+          </div>
+          <div class="node-children">
+            
+            <!-- 1. Components & Directives -->
+            <div class="tree-group">
+              <div class="group-header">
+                <span class="icon">📁</span>
+                <span class="name">Components & Directives ({{ getContextEntitiesByType('component').length + getContextEntitiesByType('directive').length }})</span>
+              </div>
+              <div class="group-items">
+                <div *ngFor="let c of getContextEntitiesByType('component').concat(getContextEntitiesByType('directive'))" 
+                     class="tree-item leaf"
+                     [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === c.id"
+                     (click)="onTreeItemSelect('routine', c)">
+                  <span class="item-icon">🧩</span>
+                  <span class="item-name" [title]="c.name">{{ c.name }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Services & Injectables -->
+            <div class="tree-group">
+              <div class="group-header">
+                <span class="icon">📁</span>
+                <span class="name">Services & Injectables ({{ getContextEntitiesByType('service').length }})</span>
+              </div>
+              <div class="group-items">
+                <div *ngFor="let c of getContextEntitiesByType('service')" 
+                     class="tree-item leaf"
+                     [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === c.id"
+                     (click)="onTreeItemSelect('routine', c)">
+                  <span class="item-icon">🛠️</span>
+                  <span class="item-name" [title]="c.name">{{ c.name }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. HTML Templates -->
+            <div class="tree-group">
+              <div class="group-header">
+                <span class="icon">📁</span>
+                <span class="name">HTML Elements ({{ getContextEntitiesByType('html-element').length }})</span>
+              </div>
+              <div class="group-items">
+                <div *ngFor="let c of getContextEntitiesByType('html-element')" 
+                     class="tree-item leaf"
+                     [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === c.id"
+                     (click)="onTreeItemSelect('routine', c)">
+                  <span class="item-icon">🕸️</span>
+                  <span class="item-name" [title]="c.name">{{ c.name }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. HTML Bindings (Property & Event) -->
+            <div class="tree-group">
+              <div class="group-header">
+                <span class="icon">📁</span>
+                <span class="name">HTML Bindings ({{ getContextEntitiesByType('event-binding').length + getContextEntitiesByType('property-binding').length }})</span>
+              </div>
+              <div class="group-items">
+                <div *ngFor="let c of getContextEntitiesByType('event-binding').concat(getContextEntitiesByType('property-binding'))" 
+                     class="tree-item leaf"
+                     [class.active]="selectedTreeItem?.type === 'routine' && selectedTreeItem?.id === c.id"
+                     (click)="onTreeItemSelect('routine', c)">
+                  <span class="item-icon">🔗</span>
+                  <span class="item-name" [title]="c.name">{{ c.name }}</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </aside>
 
@@ -359,13 +439,13 @@
     </main>
 
     <!-- RIGHT SIDEBAR: DETAILS & FK EDITOR -->
-    <aside class="details-sidebar" [class.open]="selectedElementType !== null">
-      <div class="sidebar-header" *ngIf="selectedElementType !== null">
+    <aside class="details-sidebar" [class.open]="selectedElementType !== null || selectedTreeItem?.type === 'routine'">
+      <div class="sidebar-header" *ngIf="selectedElementType !== null || selectedTreeItem?.type === 'routine'">
         <h2>Documentation Panel</h2>
-        <button class="close-btn" (click)="clearSelection()">✕</button>
+        <button class="close-btn" (click)="clearSelection(); selectedTreeItem = null;">✕</button>
       </div>
 
-      <div class="sidebar-body" *ngIf="selectedElementType !== null">
+      <div class="sidebar-body" *ngIf="selectedElementType !== null || selectedTreeItem?.type === 'routine'">
         
         <!-- Case A: Selected Table details -->
         <div *ngIf="selectedElementType === 'table' && selectedTable">
@@ -414,7 +494,7 @@
                   </ng-container>
                 </select>
               </div>
-              <button class="submit-fk-btn" (click)="saveCustomFk()">Establish Relation</button>
+              <button class="submit-fk-btn" (click)="saveCustomFk()">Establish Relationship</button>
             </div>
 
             <!-- FK List -->
@@ -459,23 +539,45 @@
           </div>
         </div>
 
+        <!-- Case C: Selected Code Entity / Routine details -->
+        <div *ngIf="selectedElementType === null && selectedTreeItem?.type === 'routine' && selectedTreeItem?.data">
+          <div class="metadata-group">
+            <label>Entity Name</label>
+            <div class="value-box highlight" style="font-family: monospace; font-size: 0.9rem;">{{ selectedTreeItem.name }}</div>
+          </div>
+          <div class="metadata-group">
+            <label>Type / Classification</label>
+            <div class="value-box muted" style="text-transform: capitalize;">{{ selectedTreeItem.data.type }}</div>
+          </div>
+          <div class="metadata-group" *ngIf="selectedTreeItem.data.signature">
+            <label>Definition Signature</label>
+            <div class="value-box" style="font-family: monospace; white-space: pre-wrap; font-size: 0.8rem; background: #1e1e2e; border: 1px solid #ffffff1a;">{{ selectedTreeItem.data.signature }}</div>
+          </div>
+        </div>
+
         <!-- SHARED: Description Editor -->
-        <div class="metadata-group desc-editor-group">
+        <div class="metadata-group desc-editor-group" style="margin-top: 16px;">
           <label for="commentField">Documentation Description</label>
           <textarea
             id="commentField"
             [(ngModel)]="editDescriptionValue"
-            placeholder="Write markdown or comments for this schema element...">
+            placeholder="Write markdown or comments for this element...">
           </textarea>
         </div>
 
         <button class="save-desc-btn" (click)="saveDescription()">Update Comments</button>
+
+        <!-- Danger zone pruning -->
+        <div class="danger-zone" *ngIf="selectedElementType === 'table' || (selectedElementType === null && selectedTreeItem?.type === 'routine')" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #ff4d4f33;">
+          <label style="color: #ff4d4f; font-size: 0.8rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.05em; display: block; margin-bottom: 8px;">Prune Scanned Catalog</label>
+          <button class="save-desc-btn" style="background: #ff4d4f; color: white;" (click)="deleteSelectedItem()">🚨 Delete Item from Catalog</button>
+        </div>
       </div>
 
       <!-- Empty state right sidebar -->
-      <div class="sidebar-empty-state" *ngIf="selectedElementType === null">
+      <div class="sidebar-empty-state" *ngIf="selectedElementType === null && selectedTreeItem?.type !== 'routine'">
         <div class="empty-icon">📝</div>
-        <p>Select any table header or column item to inspect metadata properties, view/create relationships, and add comments.</p>
+        <p>Select any table header, column, or context node item to inspect metadata properties, view/create relationships, and add comments.</p>
       </div>
     </aside>
 
@@ -541,6 +643,35 @@
                 (click)="saveAddTableAndLink()">
           Add & Link Table
         </button>
+      </div>
+    </div>
+  <!-- PROJECT MANAGER MODAL DIALOG -->
+  <div class="modal-backdrop" *ngIf="showProjectManagerModal">
+    <div class="modal-dialog" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Manage Scanned Profiles</h3>
+        <button class="modal-close" (click)="showProjectManagerModal = false">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        <p class="modal-tip" style="margin-bottom: 16px;">The following projects have scanned metadata profiles in your catalog index. You can delete obsolete profiles below:</p>
+        
+        <div class="project-list-container" style="max-height: 250px; overflow-y: auto;">
+          <div *ngFor="let p of projects" class="project-mgr-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #ffffff1a; background: #2a2d3e; margin-bottom: 8px; border-radius: 4px;">
+            <div>
+              <strong style="color: #f8f8f2; display: block;">{{ p.name }}</strong>
+              <small style="color: #888;">Scanned at: {{ p.scannedAt | date:'short' }}</small>
+            </div>
+            <button class="btn btn-danger btn-sm" style="background: #ff4d4f; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;" (click)="deleteProject(p.id, $event)">Delete</button>
+          </div>
+          <div *ngIf="projects.length === 0" style="color: #888; text-align: center; padding: 20px;">
+            No scanned profiles found.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-cancel" style="width: 100%;" (click)="showProjectManagerModal = false">Close</button>
       </div>
     </div>
   </div>
